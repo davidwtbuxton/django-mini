@@ -21,14 +21,13 @@ except NameError:
     next = lambda x: x.next()
 
 
+__version__ = '0.1'
 BACKENDS = {
     'postgresql': 'django.db.backends.postgresql_psycopg2',
     'mysql': 'django.db.backend.mysql',
     'sqlite': 'django.db.backends.sqlite3',
     'oracle': 'django.db.backends.oracle',
 }
-
-
 DJANGO_SETTINGS = {
     'DEBUG': True,
     'INTERNAL_IPS': ('127.0.0.1',),
@@ -36,8 +35,6 @@ DJANGO_SETTINGS = {
     'STATIC_ROOT': 'static',
     'SECRET_KEY': get_random_string(50, string.printable[:80]),
 }
-
-
 ADMIN_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -67,7 +64,7 @@ def parse_django_args(argv):
     iter_argv = iter(argv)
     options = {}
     remainder = []
-    
+
     for arg in iter_argv:
         if arg.startswith('--'):
             if '=' in arg:
@@ -86,7 +83,7 @@ def parse_django_args(argv):
 
     return options, remainder
 
-    
+
 def parse_args(argv):
     opts, args = make_parser().parse_args(argv)
     django_opts, extra_args = parse_django_args(args)
@@ -106,7 +103,7 @@ def settings_value(value):
     except (NameError, SyntaxError):
         return value
 
-     
+
 # Taken from SQLAlchemy.
 def _parse_rfc1738_args(name):
     pattern = re.compile(r'''
@@ -144,7 +141,7 @@ def _parse_rfc1738_args(name):
         return components
     else:
         raise ValueError(
-            "Could not parse rfc1738 URL from string '%s'" % name)    
+            "Could not parse rfc1738 URL from string '%s'" % name)
 
 
 def parse_database_string(value):
@@ -167,14 +164,14 @@ def main(argv):
     options, django_options, arguments = parse_args(argv[1:])
     settings = dict(DJANGO_SETTINGS)
     settings.update(django_options)
-    
+
     apps = [name for name, prefix in options.apps]
     if options.admin:
         apps.extend(name for name in ADMIN_APPS if name not in apps)
 
     if options.staticfiles:
         apps.append('django.contrib.staticfiles')
-    
+
     settings['INSTALLED_APPS'] = apps
     settings['DATABASES'] = {'default': parse_database_string(options.database)}
     configure_settings(settings)
@@ -189,7 +186,7 @@ def main(argv):
 
 def configure_urlconf(patterns):
     from django.conf import settings
-    
+
     if not patterns:
         raise ImproperlyConfigured('An app or admin is required.')
 
@@ -199,7 +196,7 @@ def configure_urlconf(patterns):
 
 def configure_settings(kwargs):
     from django.conf import settings
-    
+
     settings.configure(**kwargs)
 
 
@@ -217,7 +214,7 @@ def make_urlpatterns(app_map):
 def make_admin_urlpatterns():
     from django.conf.urls import patterns, include, url
     from django.contrib import admin
-    
+
     admin.autodiscover()
     return patterns('', url(r'^admin/', include(admin.site.urls)))
 

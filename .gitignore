@@ -1,0 +1,8 @@
+*.py[cod]
+dist
+sdist
+env
+.coverage
+.DS_Store
+MANIFEST
+
