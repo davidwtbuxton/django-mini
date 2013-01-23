@@ -9,7 +9,7 @@ Django-mini is a command-line utility for running `Django`_ management commands 
 Installation
 ------------
 
-Download the source, unpack it and install it like a typical Python distribution::
+`Download the source`_, unpack it and install it like a typical Python distribution::
 
     python setup.py install
 
@@ -33,3 +33,8 @@ To run Django with your app and the built-in admin, use a named database::
     django-mini.py --database /tmp/django.sqlite --admin --app myapp runserver
 
 That will start Django's development server with the admin. The admin application will be available at ``http://localhost:8000/admin/`` and all other requests will be directed to your app, i.e. your app's ``myapp.urls`` is configured to serve all other requests.
+
+`The full documentation`_ has more examples of use, including how to use other databases, how to change any setting, and how to mount an app at a particular URL.
+
+.. _The full documentation: https://github.com/davidwtbuxton/django-mini
+.. _Download the source: https://github.com/davidwtbuxton/django-mini
