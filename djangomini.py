@@ -59,9 +59,9 @@ class DjangoOptionParser(OptionParser):
         except BadOptionError:
             option = Option(opt, action='callback', dest='django',
                 type='string', callback=add_django_option)
+            # Adding the option straight in by-passes the help mechanism.
             self._long_opt[opt] = option
             return opt
-    # Probably need to suppress these options in the help message.
 
 
 def add_django_option(option, opt_str, value, parser):
@@ -80,22 +80,20 @@ def add_app_name(option, opt_str, value, parser):
 
 def make_parser():
     parser = DjangoOptionParser()
+    # Important! Makes it easy to pass options to the Django command.
     parser.disable_interspersed_args()
     parser.add_option('-a', '--app', action='callback', dest='apps', default=[],
         type='string', callback=add_app_name)
     parser.add_option('-d', '--database', default='sqlite:///:memory:')
     parser.add_option('--admin', action='store_true', default=False)
-    parser.add_option('--staticfiles', action='store_true', default=False)
 
     return parser
 
 
 def parse_args(argv):
     opts, args = make_parser().parse_args(argv)
-    logging.info('opts: %r', opts)
-    logging.info('args: %r', args)
-
     django_opts = getattr(opts, 'django', {})
+
     return opts, django_opts, args
 
 
@@ -153,6 +151,11 @@ def _parse_rfc1738_args(name):
 
 
 def parse_database_string(value):
+    """Parses a database connection string and returns a dictionary suitable
+    for use in Django's DATABASES setting.
+
+    A path string is interpreted as an sqlite database.
+    """
     try:
         parts = _parse_rfc1738_args(value)
     except ValueError:
@@ -177,9 +180,6 @@ def main(argv):
     if options.admin:
         apps.extend(name for name in ADMIN_APPS if name not in apps)
 
-    if options.staticfiles:
-        apps.append('django.contrib.staticfiles')
-
     settings['INSTALLED_APPS'] = apps
     settings['DATABASES'] = {'default': parse_database_string(options.database)}
     configure_settings(settings)
@@ -193,6 +193,7 @@ def main(argv):
 
 
 def configure_urlconf(patterns):
+    """Sets up Django's settings.ROOT_URLCONF patterns."""
     from django.conf import settings
 
     if not patterns:
@@ -203,12 +204,14 @@ def configure_urlconf(patterns):
 
 
 def configure_settings(kwargs):
+    """Sets up Django's settings module."""
     from django.conf import settings
 
     settings.configure(**kwargs)
 
 
 def make_urlpatterns(app_map):
+    """Creates a new patterns() list from the list of (app, prefix) strings."""
     from django.conf.urls import patterns, include, url
 
     urls = []
@@ -220,6 +223,9 @@ def make_urlpatterns(app_map):
 
 
 def make_admin_urlpatterns():
+    """Imports the default site admin instance and returns a patterns() list
+    configured to serve it at /admin/.
+    """
     from django.conf.urls import patterns, include, url
     from django.contrib import admin
 

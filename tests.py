@@ -193,32 +193,20 @@ class MakeURLPatternsTests(BaseTest):
 
 class MainTests(BaseTest):
     @patch('django.conf.urls.import_module')
-    @patch('djangomini.call_command')
-    def test_main_admin(self, call_command, import_module):
+    @patch('djangomini.execute_from_command_line')
+    def test_main_admin2(self, execute_from_command_line, import_module):
         from django.conf import settings
-
         argv = 'django-mini --admin runserver'.split()
         main(argv)
 
-        call_command.assert_called_once_with('runserver')
-        self.assertEqual(settings.INSTALLED_APPS, ADMIN_APPS)
-
-    @patch('django.conf.urls.import_module')
-    @patch('djangomini.execute_from_command_line')
-    def test_main_admin(self, call_command, import_module):
-        from django.conf import settings
-        argv = 'django-mini --admin --staticfiles runserver'.split()
-        main(argv)
-
-        call_command.assert_called_once_with(['django-mini', 'runserver'])
-        self.assertTrue('django.contrib.staticfiles' in settings.INSTALLED_APPS)
+        execute_from_command_line.assert_called_once_with(['django-mini', 'runserver'])
 
     @patch('django.conf.urls.import_module')
     @patch('django.utils.importlib.import_module')
     @patch('djangomini.execute_from_command_line')
     def test_main_full(self, call_command, import_module, import_module2):
         from django.conf import settings
-        argv = ('django-mini --admin --staticfiles -a app1 --app app2'
+        argv = ('django-mini --admin -a app1 --app app2'
                 ' --database sqlite:////var/run/db.sqlite --static-url /cdn/'
                 ' runserver --insecure 80'
                 ).split()
@@ -226,7 +214,7 @@ class MainTests(BaseTest):
         main(argv)
 
         call_command.assert_called_once_with(['django-mini', 'runserver', '--insecure', '80'])
-        apps = ['django.contrib.staticfiles', 'django.contrib.admin', 'app1', 'app2']
+        apps = ['django.contrib.admin', 'app1', 'app2']
         for app in apps:
             self.assertTrue(app in settings.INSTALLED_APPS)
         self.assertEqual(settings.DATABASES['default']['ENGINE'], 'django.db.backends.sqlite3')
