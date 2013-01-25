@@ -36,14 +36,11 @@ class AddAppNameTests(BaseTest):
         self.assertEqual(self.parser.values.apps, [('test', '')])
 
 
-class ParsingTests(BaseTest):
+class ParsingArgumentsTests(BaseTest):
     def test_make_parser(self):
         self.assertTrue(isinstance(make_parser(), OptionParser))
 
     def test_parse_args(self):
-        """Making sure we split our own options from those we want to pass
-        through to Django.
-        """
         # The key is the arg line, the value is a triple. First properties and
         # values of the opts, second the django_opts, last any positional args
         # that are passed through to Django.
@@ -54,11 +51,22 @@ class ParsingTests(BaseTest):
                 {'EXTRA': 1},
                 ['test'],
             ),
-
-            '--help': (
+            '-a app1 --app app2:foo --installed-apps [\'bar\'] test': (
+                {'admin': False, 'database': 'sqlite:///:memory:',
+                    'apps': [('app1', ''), ('app2', 'foo')]},
+                {'INSTALLED_APPS': ['bar']},
+                ['test'],
+            ),
+            'syncdb --noinput --database=DATABASE': (
+                {'admin': False, 'database': 'sqlite:///:memory:', 'apps': []},
                 {},
-                {},
-                [],
+                ['syncdb', '--noinput', '--database=DATABASE'],
+            ),
+            '--database=sqlite:///:memory: --foo bar test': (
+                {'admin': False, 'database': 'sqlite:///:memory:',
+                    'apps': [],},
+                {'FOO': 'bar',},
+                ['test'],
             ),
         }
 
@@ -71,14 +79,22 @@ class ParsingTests(BaseTest):
             self.assertEqual(args, expected[2])
 
     def test_parse_help(self):
-        argv = '--help'.split()
-        self.assertRaises(SystemExit, parse_args, argv)
+        # All these command lines should show the help.
+        data = [
+            '--help',
+            '-d sqlite:///example.db --help',
+            '-h',
+        ]
+
+        for line in data:
+            self.assertRaises(SystemExit, parse_args, line.split())
 
     def test_settings_name(self):
         tests = [
             ('name', 'NAME'),
             ('with-underscore', 'WITH_UNDERSCORE'),
             ('--name', 'NAME'),
+            ('name--', 'NAME__'), # Trailing dash ain't my prob.
         ]
 
         for value, expected in tests:
@@ -98,11 +114,18 @@ class ParsingTests(BaseTest):
         for value, expected in tests:
             self.assertEqual(settings_value(value), expected)
 
+
+class ParsingDatabaseStringTests(BaseTest):
     def test_parse_rfc1738_args(self):
         tests = [
             ('sqlite:///:memory:', {'name': 'sqlite', 'database': ':memory:',
                 'username': None, 'host': '', 'query': None, 'password': None,
                 'port': None,}),
+            ('mysql://root@localhost/mydatabase?charset=utf8&use_unicode=0', {
+                'name': 'mysql', 'database': 'mydatabase', 'username': 'root',
+                'host': 'localhost', 'password': None, 'port': None,
+                'query': {'charset': 'utf8', 'use_unicode': '0'},
+                }),
         ]
 
         for value, expected in tests:
@@ -116,6 +139,15 @@ class ParsingTests(BaseTest):
             ('/var/run/db/django.sqlite', {'ENGINE': 'django.db.backends.sqlite3',
                 'NAME': '/var/run/db/django.sqlite', 'HOST': '', 'PASSWORD': None,
                 'PORT': None, 'USER': None,}),
+            ('postgresql://scott:tiger@localhost:5432/mydatabase', {
+                'ENGINE': 'django.db.backends.postgresql_psycopg2',
+                'NAME': 'mydatabase', 'HOST': 'localhost', 'PASSWORD': 'tiger',
+                'PORT': '5432', 'USER': 'scott',}),
+            ('mysql://root@localhost/mydatabase?charset=utf8&use_unicode=0', {
+                'ENGINE': 'django.db.backends.mysql', 'NAME': 'mydatabase',
+                'HOST': 'localhost', 'PASSWORD': None, 'PORT': None,
+                'USER': 'root',
+                }),
         ]
 
         for value, expected in tests:
@@ -186,13 +218,14 @@ class MainTests(BaseTest):
     @patch('djangomini.execute_from_command_line')
     def test_main_full(self, call_command, import_module, import_module2):
         from django.conf import settings
-        argv = ('django-mini --admin --staticfiles -a app1 --app app2 runserver'
+        argv = ('django-mini --admin --staticfiles -a app1 --app app2'
                 ' --database sqlite:////var/run/db.sqlite --static-url /cdn/'
+                ' runserver --insecure 80'
                 ).split()
 
         main(argv)
 
-        call_command.assert_called_once_with(['django-mini', 'runserver'])
+        call_command.assert_called_once_with(['django-mini', 'runserver', '--insecure', '80'])
         apps = ['django.contrib.staticfiles', 'django.contrib.admin', 'app1', 'app2']
         for app in apps:
             self.assertTrue(app in settings.INSTALLED_APPS)

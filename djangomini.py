@@ -28,7 +28,7 @@ except NameError:
 __version__ = '0.1'
 BACKENDS = {
     'postgresql': 'django.db.backends.postgresql_psycopg2',
-    'mysql': 'django.db.backend.mysql',
+    'mysql': 'django.db.backends.mysql',
     'sqlite': 'django.db.backends.sqlite3',
     'oracle': 'django.db.backends.oracle',
 }
