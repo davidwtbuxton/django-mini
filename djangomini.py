@@ -79,11 +79,11 @@ def add_app_name(option, opt_str, value, parser):
 
 
 def make_parser():
-    parser = DjangoOptionParser()
+    parser = DjangoOptionParser(version='%prog ' + __version__)
     # Important! Makes it easy to pass options to the Django command.
     parser.disable_interspersed_args()
     parser.add_option('-a', '--app', action='callback', dest='apps', default=[],
-        type='string', callback=add_app_name)
+        type='string', callback=add_app_name, metavar='APPNAME')
     parser.add_option('-d', '--database', default='sqlite:///:memory:')
     parser.add_option('--admin', action='store_true', default=False)
 
@@ -91,8 +91,13 @@ def make_parser():
 
 
 def parse_args(argv):
-    opts, args = make_parser().parse_args(argv)
+    parser = make_parser()
+    opts, args = parser.parse_args(argv)
     django_opts = getattr(opts, 'django', {})
+
+    # If you don't specify a command we require --admin or one --app.
+    if not args and not (opts.admin or opts.apps):
+        parser.error('--admin or --app=APPNAME is required')
 
     return opts, django_opts, args
 
@@ -197,7 +202,7 @@ def configure_urlconf(patterns):
     from django.conf import settings
 
     if not patterns:
-        raise ImproperlyConfigured('An app or admin is required.')
+        raise ImproperlyConfigured('--app or --admin is required.')
 
     # Has to be hashable or a string naming a module.
     settings.ROOT_URLCONF = tuple(patterns)
