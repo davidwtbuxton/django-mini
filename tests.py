@@ -72,7 +72,7 @@ class ParsingTests(BaseTest):
 
     def test_parse_help(self):
         argv = '--help'.split()
-        parse_args(argv)
+        self.assertRaises(SystemExit, parse_args, argv)
 
     def test_settings_name(self):
         tests = [

@@ -1,0 +1,7 @@
+# Requirements for running tests and building documentation.
+# pip install -r requirements-dev.txt
+Sphinx
+coverage
+docutils
+mock
+nose

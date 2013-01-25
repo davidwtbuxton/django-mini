@@ -1,6 +1,6 @@
 #/usr/bin/env python
 import sys
-import optparse
+from optparse import Option, OptionParser, BadOptionError
 import os
 import string
 import re
@@ -9,7 +9,10 @@ import urllib
 from django.utils.crypto import get_random_string
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management import execute_from_command_line
+import logging
 
+
+logging.basicConfig(loglevel=logging.DEBUG)
 
 try:
     from urlparse import parse_qsl
@@ -45,24 +48,27 @@ ADMIN_APPS = (
 )
 
 
-class DjangoOptionParser(optparse.OptionParser):
+class DjangoOptionParser(OptionParser):
     """Extends OptionParser to treat any unknown long option as a Django
     settings variable with a value. '--foo bar' -> 'FOO=bar'.
     """
     # We need to catch any unknown long option and create an Option for it.
     def _match_long_opt(self, opt):
         try:
-            optparse.OptionParser._match_long_opt(self, opt)
-        except optparse.BadOptionError:
-            self.add_option(opt, action='callback', dest='django', default={},
+            return OptionParser._match_long_opt(self, opt)
+        except BadOptionError:
+            option = Option(opt, action='callback', dest='django',
                 type='string', callback=add_django_option)
+            self._long_opt[opt] = option
             return opt
     # Probably need to suppress these options in the help message.
 
 
 def add_django_option(option, opt_str, value, parser):
-    name = settings_name(value)
+    name = settings_name(opt_str)
     value = settings_value(value)
+    if not hasattr(parser.values, 'django'):
+        parser.values.django = {}
     parser.values.django[name] = value
 
 
@@ -73,7 +79,7 @@ def add_app_name(option, opt_str, value, parser):
 
 
 def make_parser():
-    parser = optparse.OptionParser()
+    parser = DjangoOptionParser()
     parser.disable_interspersed_args()
     parser.add_option('-a', '--app', action='callback', dest='apps', default=[],
         type='string', callback=add_app_name)
@@ -86,8 +92,11 @@ def make_parser():
 
 def parse_args(argv):
     opts, args = make_parser().parse_args(argv)
+    logging.info('opts: %r', opts)
+    logging.info('args: %r', args)
 
-    return opts, opts.django, args
+    django_opts = getattr(opts, 'django', {})
+    return opts, django_opts, args
 
 
 def settings_name(value):
