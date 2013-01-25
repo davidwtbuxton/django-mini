@@ -1,5 +1,6 @@
 #/usr/bin/env python
 import sys
+import optparse
 import os
 import string
 import re
@@ -7,7 +8,7 @@ import types
 import urllib
 from django.utils.crypto import get_random_string
 from django.core.exceptions import ImproperlyConfigured
-from django.core.management import execute_from_command_line, LaxOptionParser
+from django.core.management import execute_from_command_line
 
 
 try:
@@ -44,13 +45,36 @@ ADMIN_APPS = (
 )
 
 
+class DjangoOptionParser(optparse.OptionParser):
+    """Extends OptionParser to treat any unknown long option as a Django
+    settings variable with a value. '--foo bar' -> 'FOO=bar'.
+    """
+    # We need to catch any unknown long option and create an Option for it.
+    def _match_long_opt(self, opt):
+        try:
+            optparse.OptionParser._match_long_opt(self, opt)
+        except optparse.BadOptionError:
+            self.add_option(opt, action='callback', dest='django', default={},
+                type='string', callback=add_django_option)
+            return opt
+    # Probably need to suppress these options in the help message.
+
+
+def add_django_option(option, opt_str, value, parser):
+    name = settings_name(value)
+    value = settings_value(value)
+    parser.values.django[name] = value
+
+
 def add_app_name(option, opt_str, value, parser):
+    """Call-back for the --app option and OptionParser."""
     name, sep, prefix = value.partition(':')
     parser.values.apps.append((name, prefix))
 
 
 def make_parser():
-    parser = LaxOptionParser()
+    parser = optparse.OptionParser()
+    parser.disable_interspersed_args()
     parser.add_option('-a', '--app', action='callback', dest='apps', default=[],
         type='string', callback=add_app_name)
     parser.add_option('-d', '--database', default='sqlite:///:memory:')
@@ -60,35 +84,10 @@ def make_parser():
     return parser
 
 
-def parse_django_args(argv):
-    iter_argv = iter(argv)
-    options = {}
-    remainder = []
-
-    for arg in iter_argv:
-        if arg.startswith('--'):
-            if '=' in arg:
-                arg, _, value = arg.partition('=')
-                # Bad hack to work around LaxOptionParser bug, doesn't
-                # actually solve problem.
-                try:
-                    next(iter_argv)
-                except StopIteration:
-                    pass
-            else:
-                value = next(iter_argv)
-            options[settings_name(arg)] = settings_value(value)
-        else:
-            remainder.append(arg)
-
-    return options, remainder
-
-
 def parse_args(argv):
     opts, args = make_parser().parse_args(argv)
-    django_opts, extra_args = parse_django_args(args)
 
-    return opts, django_opts, extra_args
+    return opts, opts.django, args
 
 
 def settings_name(value):

@@ -2,7 +2,7 @@ from __future__ import with_statement
 import unittest
 from mock import MagicMock, Mock, patch, call
 from optparse import OptionParser
-from djangomini import (add_app_name, make_parser, parse_django_args, parse_args,
+from djangomini import (add_app_name, make_parser, parse_args,
     settings_name, settings_value, _parse_rfc1738_args, parse_database_string,
     main, configure_urlconf, make_urlpatterns, configure_settings,
     make_admin_urlpatterns, DJANGO_SETTINGS, ADMIN_APPS)
@@ -11,13 +11,13 @@ from djangomini import (add_app_name, make_parser, parse_django_args, parse_args
 class BaseTest(unittest.TestCase):
     def setUp(self):
         import django.conf
-        
+
         self._original_settings = django.conf.settings
         django.conf.settings = django.conf.LazySettings()
-    
+
     def tearDown(self):
         import django.conf
-        
+
         django.conf.settings = self._original_settings
 
 
@@ -26,7 +26,7 @@ class AddAppNameTests(BaseTest):
         super(AddAppNameTests, self).setUp()
         self.parser = Mock()
         self.parser.values.apps = []
-    
+
     def test_with_prefix(self):
         add_app_name(None, '--app', 'test:prefix', self.parser)
         self.assertEqual(self.parser.values.apps, [('test', 'prefix')])
@@ -41,20 +41,38 @@ class ParsingTests(BaseTest):
         self.assertTrue(isinstance(make_parser(), OptionParser))
 
     def test_parse_args(self):
-        argv = '--admin -d sqlite:///example.db -a app1 --extra=1 test'.split()
-        opts, django_opts, args = parse_args(argv)
-        
-        self.assertEqual(opts.admin, True)
-        self.assertEqual(opts.database, 'sqlite:///example.db')
-        self.assertEqual(opts.apps, [('app1', '')])
-        self.assertEqual(django_opts, {'EXTRA': 1})
-        self.assertEqual(args, ['test'])
+        """Making sure we split our own options from those we want to pass
+        through to Django.
+        """
+        # The key is the arg line, the value is a triple. First properties and
+        # values of the opts, second the django_opts, last any positional args
+        # that are passed through to Django.
+        data = {
+            '--admin -d sqlite:///example.db -a app1 --extra=1 test': (
+                {'admin': True, 'database': 'sqlite:///example.db',
+                    'apps': [('app1', '')]},
+                {'EXTRA': 1},
+                ['test'],
+            ),
 
-    def test_parse_django_args(self):
-        argv = '--option a --other-option b arg1 arg2 --extra c'.split()
-        options, remainder = parse_django_args(argv)
-        self.assertEqual(options, {'OPTION': 'a', 'OTHER_OPTION': 'b', 'EXTRA': 'c'})
-        self.assertEqual(remainder, ['arg1', 'arg2'])
+            '--help': (
+                {},
+                {},
+                [],
+            ),
+        }
+
+        for line, expected in data.items():
+            opts, django_opts, args = parse_args(line.split(' '))
+
+            for key, expected_value in expected[0].items():
+                self.assertEqual(getattr(opts, key), expected_value)
+            self.assertEqual(django_opts, expected[1])
+            self.assertEqual(args, expected[2])
+
+    def test_parse_help(self):
+        argv = '--help'.split()
+        parse_args(argv)
 
     def test_settings_name(self):
         tests = [
@@ -62,7 +80,7 @@ class ParsingTests(BaseTest):
             ('with-underscore', 'WITH_UNDERSCORE'),
             ('--name', 'NAME'),
         ]
-        
+
         for value, expected in tests:
             self.assertEqual(settings_name(value), expected)
 
@@ -76,7 +94,7 @@ class ParsingTests(BaseTest):
             ('0', 0),
             ('/test/', '/test/'),
         ]
-        
+
         for value, expected in tests:
             self.assertEqual(settings_value(value), expected)
 
@@ -86,7 +104,7 @@ class ParsingTests(BaseTest):
                 'username': None, 'host': '', 'query': None, 'password': None,
                 'port': None,}),
         ]
-        
+
         for value, expected in tests:
             self.assertEqual(_parse_rfc1738_args(value), expected)
 
@@ -99,7 +117,7 @@ class ParsingTests(BaseTest):
                 'NAME': '/var/run/db/django.sqlite', 'HOST': '', 'PASSWORD': None,
                 'PORT': None, 'USER': None,}),
         ]
-        
+
         for value, expected in tests:
             self.assertEqual(parse_database_string(value), expected)
 
@@ -109,7 +127,7 @@ class ConfigureDjangoTests(BaseTest):
     def test_configure_urlconf(self, settings):
         patterns = [(r'^test/', 'myapp.views.test')]
         configure_urlconf(patterns)
-        
+
         self.assertEqual(settings.ROOT_URLCONF, tuple(patterns))
 
     @patch('django.conf.settings')
@@ -124,13 +142,13 @@ class MakeURLPatternsTests(BaseTest):
     def test_make_urlpatterns(self, import_module):
         app_map = [('app1', ''), ('app2', 'prefix')]
         result = make_urlpatterns(app_map)
-        
+
         import_module.assert_has_calls([call('app1.urls'), call('app2.urls')])
         from django.conf.urls import RegexURLResolver
 
         for pattern in result:
             self.assertTrue(isinstance(pattern, RegexURLResolver))
-    
+
     def test_make_admin_urlpatterns(self):
         from django.conf.urls import RegexURLResolver
 
@@ -146,13 +164,13 @@ class MainTests(BaseTest):
     @patch('djangomini.call_command')
     def test_main_admin(self, call_command, import_module):
         from django.conf import settings
-        
+
         argv = 'django-mini --admin runserver'.split()
         main(argv)
-        
+
         call_command.assert_called_once_with('runserver')
         self.assertEqual(settings.INSTALLED_APPS, ADMIN_APPS)
-    
+
     @patch('django.conf.urls.import_module')
     @patch('djangomini.execute_from_command_line')
     def test_main_admin(self, call_command, import_module):
