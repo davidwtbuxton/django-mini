@@ -120,8 +120,9 @@ def settings_value(value):
 
 # Taken from SQLAlchemy.
 def _parse_rfc1738_args(name):
+    # Modified to permit dots in the engine name.
     pattern = re.compile(r'''
-            (?P<name>[\w\+]+)://
+            (?P<name>[\w\.\+]+)://
             (?:
                 (?P<username>[^:/]*)
                 (?::(?P<password>[^/]*))?

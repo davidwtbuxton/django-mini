@@ -140,6 +140,11 @@ class ParsingDatabaseStringTests(BaseTest):
                 'host': 'localhost', 'password': None, 'port': None,
                 'query': {'charset': 'utf8', 'use_unicode': '0'},
                 }),
+            ('custom.backend.driver://localhost/mydatabase', {
+                'name': 'custom.backend.driver', 'database': 'mydatabase',
+                'username': None, 'host': 'localhost', 'password': None,
+                'port': None, 'query': None,
+                }),
         ]
 
         for value, expected in tests:
@@ -162,6 +167,12 @@ class ParsingDatabaseStringTests(BaseTest):
                 'HOST': 'localhost', 'PASSWORD': '', 'PORT': '',
                 'USER': 'root', 'OPTIONS': {'charset': 'utf8', 'use_unicode': '0'},
                 }),
+            ('custom.backend.driver://localhost/mydatabase', {
+                'ENGINE': 'custom.backend.driver', 'NAME': 'mydatabase',
+                'HOST': 'localhost', 'PASSWORD': '', 'PORT': '', 'USER': '',
+                'OPTIONS': {},
+                }),
+
         ]
 
         for value, expected in tests:
