@@ -41,6 +41,19 @@ class ParsingArgumentsTests(BaseTest):
     def test_make_parser(self):
         self.assertTrue(isinstance(make_parser(), OptionParser))
 
+    def test_default_args(self):
+        opts, django_opts, args = parse_args(['test'])
+
+        expected = {
+            'admin': False,
+            'persisting': False,
+            'apps': [],
+            'database': 'sqlite:///:memory:',
+        }
+
+        for option, value in expected.items():
+            self.assertEqual(getattr(opts, option), value)
+
     def test_parse_args(self):
         # The key is the arg line, the value is a triple. First properties and
         # values of the opts, second the django_opts, last any positional args
@@ -136,18 +149,18 @@ class ParsingDatabaseStringTests(BaseTest):
         tests = [
             ('sqlite:///:memory:', {'ENGINE': 'django.db.backends.sqlite3',
                 'NAME': ':memory:', 'HOST': '', 'PASSWORD': None, 'PORT': None,
-                'USER': None,}),
+                'USER': None, 'OPTIONS': {},}),
             ('/var/run/db/django.sqlite', {'ENGINE': 'django.db.backends.sqlite3',
                 'NAME': '/var/run/db/django.sqlite', 'HOST': '', 'PASSWORD': None,
-                'PORT': None, 'USER': None,}),
+                'PORT': None, 'USER': None, 'OPTIONS': {},}),
             ('postgresql://scott:tiger@localhost:5432/mydatabase', {
                 'ENGINE': 'django.db.backends.postgresql_psycopg2',
                 'NAME': 'mydatabase', 'HOST': 'localhost', 'PASSWORD': 'tiger',
-                'PORT': '5432', 'USER': 'scott',}),
+                'PORT': '5432', 'USER': 'scott', 'OPTIONS': {},}),
             ('mysql://root@localhost/mydatabase?charset=utf8&use_unicode=0', {
                 'ENGINE': 'django.db.backends.mysql', 'NAME': 'mydatabase',
                 'HOST': 'localhost', 'PASSWORD': None, 'PORT': None,
-                'USER': 'root',
+                'USER': 'root', 'OPTIONS': {'charset': 'utf8', 'use_unicode': '0'},
                 }),
         ]
 

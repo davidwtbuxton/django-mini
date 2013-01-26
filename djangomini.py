@@ -1,12 +1,12 @@
 #/usr/bin/env python
 import sys
 from optparse import Option, OptionParser, BadOptionError
+import hashlib
 import os
 import string
 import re
 import types
 import urllib
-from django.utils.crypto import get_random_string
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management import execute_from_command_line
 import logging
@@ -37,7 +37,6 @@ DJANGO_SETTINGS = {
     'INTERNAL_IPS': ('127.0.0.1',),
     'STATIC_URL': '/static/',
     'STATIC_ROOT': 'static',
-    'SECRET_KEY': get_random_string(50, string.printable[:80]),
 }
 ADMIN_APPS = (
     'django.contrib.auth',
@@ -46,6 +45,8 @@ ADMIN_APPS = (
     'django.contrib.messages',
     'django.contrib.admin',
 )
+DEFAULT_DATABASE = 'sqlite:///:memory:'
+PERSISTING_DATABASE = 'sqlite:///djangomini.sqlite'
 
 
 class DjangoOptionParser(OptionParser):
@@ -79,13 +80,19 @@ def add_app_name(option, opt_str, value, parser):
 
 
 def make_parser():
-    parser = DjangoOptionParser(version='%prog ' + __version__)
+    parser = DjangoOptionParser(version='%prog ' + __version__,
+        usage='usage: %prog [options] command')
     # Important! Makes it easy to pass options to the Django command.
     parser.disable_interspersed_args()
     parser.add_option('-a', '--app', action='callback', dest='apps', default=[],
-        type='string', callback=add_app_name, metavar='APPNAME')
-    parser.add_option('-d', '--database', default='sqlite:///:memory:')
-    parser.add_option('--admin', action='store_true', default=False)
+        type='string', callback=add_app_name, metavar='APPNAME',
+        help='add an app and its url patterns')
+    parser.add_option('-d', '--database', default=DEFAULT_DATABASE,
+        help='configure a database')
+    parser.add_option('--admin', action='store_true', default=False,
+        help="add Django's admin and its dependencies")
+    parser.add_option('-p', '--persisting', default=False, action='store_true',
+        help='use %s instead of an in-memory database' % PERSISTING_DATABASE)
 
     return parser
 
@@ -94,10 +101,6 @@ def parse_args(argv):
     parser = make_parser()
     opts, args = parser.parse_args(argv)
     django_opts = getattr(opts, 'django', {})
-
-    # If you don't specify a command we require --admin or one --app.
-    if not args and not (opts.admin or opts.apps):
-        parser.error('--admin or --app=APPNAME is required')
 
     return opts, django_opts, args
 
@@ -173,7 +176,13 @@ def parse_database_string(value):
         'PASSWORD': parts['password'],
         'PORT': parts['port'],
         'USER': parts['username'],
+        'OPTIONS': parts['query'] or {},
     }
+
+
+def make_secret_key(options):
+    """Returns a string for use as the SECRET_KEY setting."""
+    return hashlib.md5(options.database).hexdigest()[:50]
 
 
 def main(argv):
@@ -181,12 +190,26 @@ def main(argv):
     settings = dict(DJANGO_SETTINGS)
     settings.update(django_options)
 
+    # At least one argument, else we see Django's help instead of our own.
+    if not arguments:
+        make_parser().print_help()
+        sys.exit(2)
+
+    # If you don't specify a command we require --admin or one --app.
+    if not (options.admin or options.apps):
+        parser.error('--admin or --app=APPNAME is required')
+
+    if options.persisting and (options.database == DEFAULT_DATABASE):
+        options.database = PERSISTING_DATABASE
+
     apps = [name for name, prefix in options.apps]
     if options.admin:
         apps.extend(name for name in ADMIN_APPS if name not in apps)
 
     settings['INSTALLED_APPS'] = apps
     settings['DATABASES'] = {'default': parse_database_string(options.database)}
+    # Only set after the database has been set.
+    settings.setdefault('SECRET_KEY', make_secret_key(options))
     configure_settings(settings)
 
     urlpatterns = make_urlpatterns(options.apps)
