@@ -3,7 +3,7 @@ from djangomini import __version__
 import os
 
 
-read = lambda x: open(os.path.join(os.path.dirname(__file__), filename)).read()
+read = lambda x: open(os.path.join(os.path.dirname(__file__), x)).read()
 
 
 setup(
