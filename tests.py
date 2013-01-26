@@ -148,18 +148,18 @@ class ParsingDatabaseStringTests(BaseTest):
     def test_parse_database_string(self):
         tests = [
             ('sqlite:///:memory:', {'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': ':memory:', 'HOST': '', 'PASSWORD': None, 'PORT': None,
-                'USER': None, 'OPTIONS': {},}),
+                'NAME': ':memory:', 'HOST': '', 'PASSWORD': '', 'PORT': '',
+                'USER': '', 'OPTIONS': {},}),
             ('/var/run/db/django.sqlite', {'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': '/var/run/db/django.sqlite', 'HOST': '', 'PASSWORD': None,
-                'PORT': None, 'USER': None, 'OPTIONS': {},}),
+                'NAME': '/var/run/db/django.sqlite', 'HOST': '', 'PASSWORD': '',
+                'PORT': '', 'USER': '', 'OPTIONS': {},}),
             ('postgresql://scott:tiger@localhost:5432/mydatabase', {
                 'ENGINE': 'django.db.backends.postgresql_psycopg2',
                 'NAME': 'mydatabase', 'HOST': 'localhost', 'PASSWORD': 'tiger',
                 'PORT': '5432', 'USER': 'scott', 'OPTIONS': {},}),
             ('mysql://root@localhost/mydatabase?charset=utf8&use_unicode=0', {
                 'ENGINE': 'django.db.backends.mysql', 'NAME': 'mydatabase',
-                'HOST': 'localhost', 'PASSWORD': None, 'PORT': None,
+                'HOST': 'localhost', 'PASSWORD': '', 'PORT': '',
                 'USER': 'root', 'OPTIONS': {'charset': 'utf8', 'use_unicode': '0'},
                 }),
         ]

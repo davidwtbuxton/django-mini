@@ -171,11 +171,11 @@ def parse_database_string(value):
 
     return {
         'ENGINE': BACKENDS.get(parts['name'], parts['name']),
-        'NAME': parts['database'],
-        'HOST': parts['host'],
-        'PASSWORD': parts['password'],
-        'PORT': parts['port'],
-        'USER': parts['username'],
+        'NAME': parts['database'] or '',
+        'HOST': parts['host'] or '',
+        'PASSWORD': parts['password'] or '',
+        'PORT': parts['port'] or '',
+        'USER': parts['username'] or '',
         'OPTIONS': parts['query'] or {},
     }
 
