@@ -25,7 +25,7 @@ except NameError:
     next = lambda x: x.next()
 
 
-__version__ = '0.2.1'
+__version__ = '0.2.2'
 BACKENDS = {
     'postgresql': 'django.db.backends.postgresql_psycopg2',
     'mysql': 'django.db.backends.mysql',
@@ -241,7 +241,11 @@ def configure_settings(kwargs):
 
 def make_urlpatterns(app_map):
     """Creates a new patterns() list from the list of (app, prefix) strings."""
-    from django.conf.urls import patterns, include, url
+    try:
+        from django.conf.urls import patterns, include, url
+    except ImportError:
+        # Django 1.3
+        from django.conf.urls.defaults import patterns, include, url
 
     urls = []
     for app, prefix in app_map:
@@ -255,7 +259,11 @@ def make_admin_urlpatterns():
     """Imports the default site admin instance and returns a patterns() list
     configured to serve it at /admin/.
     """
-    from django.conf.urls import patterns, include, url
+    try:
+        from django.conf.urls import patterns, include, url
+    except ImportError:
+        # Django 1.3
+        from django.conf.urls.defaults import patterns, include, url
     from django.contrib import admin
 
     admin.autodiscover()

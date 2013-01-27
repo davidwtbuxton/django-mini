@@ -9,6 +9,12 @@ from djangomini import (add_app_name, make_parser, parse_args,
     make_admin_urlpatterns, DJANGO_SETTINGS, ADMIN_APPS)
 
 
+import django
+
+django_13 = django.VERSION[:2] < (1, 4)
+url_import_patch = 'django.core.urlresolvers.import_module' if django_13 else 'django.conf.urls.import_module'
+
+
 class BaseTest(unittest.TestCase):
     def setUp(self):
         import django.conf
@@ -195,19 +201,30 @@ class ConfigureDjangoTests(BaseTest):
 
 
 class MakeURLPatternsTests(BaseTest):
-    @patch('django.conf.urls.import_module')
+    @patch(url_import_patch)
     def test_make_urlpatterns(self, import_module):
         app_map = [('app1', ''), ('app2', 'prefix')]
         result = make_urlpatterns(app_map)
 
-        import_module.assert_has_calls([call('app1.urls'), call('app2.urls')])
-        from django.conf.urls import RegexURLResolver
+        # Django 1.3 the module gets imported only when a request comes in
+        if not django_13:
+            import_module.assert_has_calls([call('app1.urls'), call('app2.urls')])
+
+        try:
+            from django.conf.urls import RegexURLResolver
+        except ImportError:
+            # Django 1.3
+            from django.core.urlresolvers import RegexURLResolver
 
         for pattern in result:
             self.assertTrue(isinstance(pattern, RegexURLResolver))
 
     def test_make_admin_urlpatterns(self):
-        from django.conf.urls import RegexURLResolver
+        try:
+            from django.conf.urls import RegexURLResolver
+        except ImportError:
+            # Django 1.3
+            from django.core.urlresolvers import RegexURLResolver
 
         configure_settings({'INSTALLED_APPS': ADMIN_APPS})
         result = make_admin_urlpatterns()
@@ -217,7 +234,7 @@ class MakeURLPatternsTests(BaseTest):
 
 
 class MainTests(BaseTest):
-    @patch('django.conf.urls.import_module')
+    @patch(url_import_patch)
     @patch('djangomini.execute_from_command_line')
     def test_main_admin2(self, execute_from_command_line, import_module):
         from django.conf import settings
@@ -226,7 +243,7 @@ class MainTests(BaseTest):
 
         execute_from_command_line.assert_called_once_with(['django-mini', 'runserver'])
 
-    @patch('django.conf.urls.import_module')
+    @patch(url_import_patch)
     @patch('django.utils.importlib.import_module')
     @patch('djangomini.execute_from_command_line')
     def test_main_full(self, call_command, import_module, import_module2):
