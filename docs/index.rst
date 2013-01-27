@@ -14,7 +14,7 @@ About
 
 Django-mini is a command-line utility for running `Django`_ management commands without a settings module. It is intended to help developers run and test stand-alone Django apps.
 
-The project's home page is https://github.com/davidwtbuxton/django-mini
+The code is distributed under the MIT license. The project's home page is https://github.com/davidwtbuxton/django-mini
 
 
 .. _Django: https://www.djangoproject.com/

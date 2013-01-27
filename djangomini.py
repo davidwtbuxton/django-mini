@@ -25,7 +25,7 @@ except NameError:
     next = lambda x: x.next()
 
 
-__version__ = '0.1'
+__version__ = '0.2'
 BACKENDS = {
     'postgresql': 'django.db.backends.postgresql_psycopg2',
     'mysql': 'django.db.backends.mysql',
