@@ -70,7 +70,7 @@ Adding Django's Admin App
 
 Use ``--admin`` to add Django's admin app and its dependencies to the settings.
 
-The path is hard-coded to ``/admin/``, and it is always added last in the ROOT_URLCONF.
+The path is hard-coded to ``/admin/``, and it is always added last in the ``ROOT_URLCONF``.
 
 
 
@@ -107,7 +107,7 @@ It is equivalent to the following in your Django settings::
         },
     }
 
-Django-mini knows about the built-in database backends so you can use ``postgresql``, ``mysql``, ``sqlite`` or ``oracle`` for the engine name. For a custom back-end you must specify the package name, e.g ``myapp.backends.customdb://localhost/mydatabase``.
+Django-mini knows about the built-in database backends so you can use ``postgresql``, ``mysql``, ``sqlite`` or ``oracle`` for the engine name. For a custom back-end you must specify the package name, e.g ``--database myapp.backends.customdb://localhost/mydatabase``.
 
 
 Configuring Any Django Setting
@@ -115,7 +115,7 @@ Configuring Any Django Setting
 
 Any long option that comes before the Django command, other than the options described above, is assumed to be a setting name followed by a value. The option name is converted to upper case with dashes replaced by underscores, and the value is evaluated as a Python expression, falling back to a string if it isn't a valid expression.
 
-For example to set ``DEBUG = False`` use ``--debug False``. Or to set ``TIME_ZONE = 'Europe/London'`` use ``--time-zone europe/london``.
+For example to set ``DEBUG = False`` use ``--debug False``. Or to set ``TIME_ZONE = 'Europe/London'`` use ``--time-zone Europe/London``.
 
 You can use more complicated values such as lists but will have to keep in mind your shell's rules for escaping special characters.
 

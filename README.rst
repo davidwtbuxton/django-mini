@@ -42,5 +42,5 @@ That will start Django's development server with the admin. The admin applicatio
 
 `The full documentation`_ has more examples of use, including how to use other databases, how to change any setting, and how to mount an app at a particular URL.
 
-.. _The full documentation: https://github.com/davidwtbuxton/django-mini
+.. _The full documentation: https://github.com/davidwtbuxton/django-mini/blob/master/docs/index.rst
 .. _Download the source: https://github.com/davidwtbuxton/django-mini
