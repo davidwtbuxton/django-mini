@@ -9,6 +9,10 @@ Django-mini is an MIT-licensed command-line utility for running `Django`_ manage
 Installation
 ------------
 
+Install using pip from PyPI::
+
+    pip install django-mini
+
 `Download the source`_, unpack it and install it like a typical Python distribution::
 
     python setup.py install

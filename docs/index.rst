@@ -23,7 +23,11 @@ The code is distributed under the MIT license. The project's home page is https:
 Installation
 ------------
 
-`Download the source`_, unpack it and install it like a typical Python distribution::
+Install using pip from PyPI::
+
+    pip install django-mini
+
+Alternatively, `download the source`_, unpack it and install it like a typical Python distribution::
 
     python setup.py install
 
