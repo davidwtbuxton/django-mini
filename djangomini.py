@@ -7,12 +7,11 @@ import string
 import re
 import types
 import urllib
-from django.core.exceptions import ImproperlyConfigured
-from django.core.management import execute_from_command_line
 import logging
 
 
-logging.basicConfig(loglevel=logging.DEBUG)
+logging.basicConfig(loglevel=logging.INFO)
+
 
 try:
     from urlparse import parse_qsl
@@ -25,7 +24,7 @@ except NameError:
     next = lambda x: x.next()
 
 
-__version__ = '0.2.2'
+__version__ = '0.2.3'
 BACKENDS = {
     'postgresql': 'django.db.backends.postgresql_psycopg2',
     'mysql': 'django.db.backends.mysql',
@@ -37,6 +36,7 @@ DJANGO_SETTINGS = {
     'INTERNAL_IPS': ('127.0.0.1',),
     'STATIC_URL': '/static/',
     'STATIC_ROOT': 'static',
+    'SITE_ID': 1,
 }
 ADMIN_APPS = (
     'django.contrib.auth',
@@ -187,6 +187,8 @@ def make_secret_key(options):
 
 
 def main(argv):
+    from django.core.management import execute_from_command_line
+
     options, django_options, arguments = parse_args(argv[1:])
     settings = dict(DJANGO_SETTINGS)
     settings.update(django_options)
@@ -224,6 +226,7 @@ def main(argv):
 def configure_urlconf(patterns):
     """Sets up Django's settings.ROOT_URLCONF patterns."""
     from django.conf import settings
+    from django.core.exceptions import ImproperlyConfigured
 
     if not patterns:
         raise ImproperlyConfigured('--app or --admin is required.')
@@ -250,7 +253,11 @@ def make_urlpatterns(app_map):
     urls = []
     for app, prefix in app_map:
         prefix = r'^%s/' % prefix if prefix else r'^'
-        urls.append(url(prefix, include('%s.urls' % app)))
+        module = '%s.urls' % app
+        try:
+            urls.append(url(prefix, include(module)))
+        except ImportError:
+            logging.warn('Failed to add %r to URL patterns, moving on.', module)
 
     return patterns('', *urls)
 
