@@ -1,13 +1,13 @@
 #/usr/bin/env python
-import sys
 from optparse import Option, OptionParser, BadOptionError
 import hashlib
+import logging
 import os
-import string
 import re
+import string
+import sys
 import types
 import urllib
-import logging
 
 
 logging.basicConfig(loglevel=logging.INFO)
@@ -17,11 +17,6 @@ try:
     from urlparse import parse_qsl
 except ImportError:
     from cgi import parse_qsl
-
-try:
-    next
-except NameError:
-    next = lambda x: x.next()
 
 
 __version__ = '0.2.3'

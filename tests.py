@@ -235,7 +235,7 @@ class MakeURLPatternsTests(BaseTest):
 
 class MainTests(BaseTest):
     @patch(url_import_patch)
-    @patch('djangomini.execute_from_command_line')
+    @patch('django.core.management.execute_from_command_line')
     def test_main_admin2(self, execute_from_command_line, import_module):
         from django.conf import settings
         argv = 'django-mini --admin runserver'.split()
@@ -245,7 +245,7 @@ class MainTests(BaseTest):
 
     @patch(url_import_patch)
     @patch('django.utils.importlib.import_module')
-    @patch('djangomini.execute_from_command_line')
+    @patch('django.core.management.execute_from_command_line')
     def test_main_full(self, call_command, import_module, import_module2):
         from django.conf import settings
         argv = ('django-mini --admin -a app1 --app app2'
