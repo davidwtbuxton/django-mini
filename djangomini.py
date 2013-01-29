@@ -19,7 +19,7 @@ except ImportError:
     from cgi import parse_qsl
 
 
-__version__ = '0.2.3'
+__version__ = '0.2.4'
 BACKENDS = {
     'postgresql': 'django.db.backends.postgresql_psycopg2',
     'mysql': 'django.db.backends.mysql',
@@ -182,7 +182,11 @@ def make_secret_key(options):
 
 
 def main(argv):
-    from django.core.management import execute_from_command_line
+    try:
+        from django.core.management import execute_from_command_line
+    except ImportError, err:
+        sys.stderr.write('%s.\nIs Django installed?\n' % str(err))
+        sys.exit(1)
 
     options, django_options, arguments = parse_args(argv[1:])
     settings = dict(DJANGO_SETTINGS)
