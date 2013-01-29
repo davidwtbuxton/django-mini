@@ -216,7 +216,8 @@ def main(argv):
 
     urlpatterns = make_urlpatterns(options.apps)
     if options.admin:
-        urlpatterns += make_admin_urlpatterns()
+        # Force /admin/ first in the patterns.
+        urlpatterns = make_admin_urlpatterns() + urlpatterns
 
     configure_urlconf(urlpatterns)
     execute_from_command_line(['django-mini'] + arguments)

@@ -44,7 +44,7 @@ Use `-a` or `--app` followed by the name of an app. The app is added to ``INSTAL
 Example::
 
     django-mini.py -a myapp -a otherapp -p runserver
-    
+
 This is equivalent to ``INSTALLED_APPS = ['myapp', 'otherapp']`` in Django's settings and
 
 ::
@@ -60,7 +60,7 @@ To mount your app at a specific path add the path name after the app name, separ
 
     django-mini.py -a myapp:foo -a otherapp:bar -p runserver
 
-This is equivalent to 
+This is equivalent to
 
 ::
 
@@ -75,8 +75,7 @@ Adding Django's Admin App
 
 Use ``--admin`` to add Django's admin app and its dependencies to the settings.
 
-The path is hard-coded to ``/admin/``, and it is always added last in the ``ROOT_URLCONF``.
-
+The path is hard-coded to ``/admin/``, and it always comes first in the ``ROOT_URLCONF`` patterns.
 
 
 Configuring a Database
