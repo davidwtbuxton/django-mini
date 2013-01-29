@@ -1,8 +1,9 @@
 *.py[cod]
-dist
-sdist
-env
+/dist
+/sdist
+/build
+/env
 .coverage
 .DS_Store
-MANIFEST
+/MANIFEST
 
