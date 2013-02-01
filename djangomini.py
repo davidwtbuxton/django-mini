@@ -226,10 +226,6 @@ def main(argv):
 def configure_urlconf(patterns):
     """Sets up Django's settings.ROOT_URLCONF patterns."""
     from django.conf import settings
-    from django.core.exceptions import ImproperlyConfigured
-
-    if not patterns:
-        raise ImproperlyConfigured('--app or --admin is required.')
 
     # Has to be hashable or a string naming a module.
     settings.ROOT_URLCONF = tuple(patterns)
