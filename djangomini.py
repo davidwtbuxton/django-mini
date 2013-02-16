@@ -2,6 +2,7 @@
 from optparse import Option, OptionParser, BadOptionError
 import hashlib
 import logging
+import imp
 import os
 import re
 import string
@@ -42,6 +43,7 @@ ADMIN_APPS = (
 )
 DEFAULT_DATABASE = 'sqlite:///:memory:'
 PERSISTING_DATABASE = 'sqlite:///djangomini.sqlite'
+_rooturlconf = 'djangominiurlconf'
 
 
 class DjangoOptionParser(OptionParser):
@@ -88,6 +90,8 @@ def make_parser():
         help="add Django's admin and its dependencies")
     parser.add_option('-p', '--persisting', default=False, action='store_true',
         help='use %s instead of an in-memory database' % PERSISTING_DATABASE)
+    parser.add_option('--debug', default=True, action='store_true',
+        help='sets DEBUG=True and activates django-debug-toolbar if present')
 
     return parser
 
@@ -185,7 +189,7 @@ def main(argv):
     try:
         from django.core.management import execute_from_command_line
     except ImportError, err:
-        sys.stderr.write('%s.\nIs Django installed?\n' % str(err))
+        sys.stderr.write('%s.\nHave you installed Django?\n' % str(err))
         sys.exit(1)
 
     options, django_options, arguments = parse_args(argv[1:])
@@ -212,6 +216,11 @@ def main(argv):
     settings['DATABASES'] = {'default': parse_database_string(options.database)}
     # Only set after the database has been set.
     settings.setdefault('SECRET_KEY', make_secret_key(options))
+
+    if options.debug:
+        settings.setdefault('DEBUG', True)
+        add_debug_toolbar(settings)
+
     configure_settings(settings)
 
     urlpatterns = make_urlpatterns(options.apps)
@@ -228,7 +237,11 @@ def configure_urlconf(patterns):
     from django.conf import settings
 
     # Has to be hashable or a string naming a module.
-    settings.ROOT_URLCONF = tuple(patterns)
+    # Make a real module for compatibility.
+    mod = imp.new_module(_rooturlconf)
+    mod.urlpatterns = patterns
+    sys.modules[_rooturlconf] = mod
+    settings.ROOT_URLCONF = _rooturlconf
 
 
 def configure_settings(kwargs):
@@ -271,6 +284,27 @@ def make_admin_urlpatterns():
 
     admin.autodiscover()
     return patterns('', url(r'^admin/', include(admin.site.urls)))
+
+
+def add_debug_toolbar(settings):
+    """Adds necessary bits for django-debug-toolbar to the settings."""
+    from django.conf import global_settings
+
+    requirements = [
+        ('MIDDLEWARE_CLASSES', 'debug_toolbar.middleware.DebugToolbarMiddleware'),
+        ('INTERNAL_IPS', '127.0.0.1'),
+        ('INSTALLED_APPS', 'debug_toolbar'),
+    ]
+
+    for name, value in requirements:
+        list_value = list(settings.get(name, []))
+        # When not set use the Django defaults. Mostly for middleware.
+        if not list_value:
+            list_value = list(getattr(global_settings, name))
+
+        if value not in list_value:
+            list_value.append(value)
+            settings[name] = list_value
 
 
 if __name__ == "__main__":

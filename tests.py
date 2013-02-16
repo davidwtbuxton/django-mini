@@ -6,7 +6,7 @@ from optparse import OptionParser
 from djangomini import (add_app_name, make_parser, parse_args,
     settings_name, settings_value, _parse_rfc1738_args, parse_database_string,
     main, configure_urlconf, make_urlpatterns, configure_settings,
-    make_admin_urlpatterns, DJANGO_SETTINGS, ADMIN_APPS)
+    make_admin_urlpatterns, DJANGO_SETTINGS, ADMIN_APPS, _rooturlconf)
 
 
 import django
@@ -191,7 +191,7 @@ class ConfigureDjangoTests(BaseTest):
         patterns = [(r'^test/', 'myapp.views.test')]
         configure_urlconf(patterns)
 
-        self.assertEqual(settings.ROOT_URLCONF, tuple(patterns))
+        self.assertEqual(settings.ROOT_URLCONF, _rooturlconf)
 
     @patch('django.conf.settings')
     def test_configure_settings(self, settings):
