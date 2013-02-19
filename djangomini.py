@@ -20,7 +20,7 @@ except ImportError:
     from cgi import parse_qsl
 
 
-__version__ = '0.3'
+__version__ = '0.4'
 BACKENDS = {
     'postgresql': 'django.db.backends.postgresql_psycopg2',
     'mysql': 'django.db.backends.mysql',
@@ -34,15 +34,25 @@ DJANGO_SETTINGS = {
     'STATIC_ROOT': 'static',
     'SITE_ID': 1,
 }
-ADMIN_APPS = (
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.admin',
-)
 DEFAULT_DATABASE = 'sqlite:///:memory:'
 PERSISTING_DATABASE = 'sqlite:///djangomini.sqlite'
+CUSTOM_APPS = {
+    'admin': {
+        'INSTALLED_APPS': [
+            'django.contrib.auth',
+            'django.contrib.contenttypes',
+            'django.contrib.sessions',
+            'django.contrib.messages',
+            'django.contrib.admin',
+        ],
+    },
+    'django-debug-toolbar': {
+        'MIDDLEWARE_CLASSES': ['debug_toolbar.middleware.DebugToolbarMiddleware'],
+        'INTERNAL_IPS': ['127.0.0.1'],
+        'INSTALLED_APPS': ['debug_toolbar'],
+        'DEBUG': True,
+    },
+}
 _rooturlconf = 'djangominiurlconf'
 
 
@@ -90,7 +100,7 @@ def make_parser():
         help="add Django's admin and its dependencies")
     parser.add_option('-p', '--persisting', default=False, action='store_true',
         help='use %s instead of an in-memory database' % PERSISTING_DATABASE)
-    parser.add_option('--debug', default=True, action='store_true',
+    parser.add_option('--debug-toolbar', default=False, action='store_true',
         help='sets DEBUG=True and activates django-debug-toolbar if present')
 
     return parser
@@ -185,6 +195,34 @@ def make_secret_key(options):
     return hashlib.md5(options.database).hexdigest()[:50]
 
 
+def add_custom_app(name, settings=None):
+    """Adds the necessary bits to a settings dictionary for a named app."""
+    from django.conf import global_settings
+
+    custom_settings = CUSTOM_APPS[name]
+
+    # Check specifically against None so they can supply their own empty dict.
+    if settings is None:
+        settings = {}
+
+    for key, custom_value in custom_settings.items():
+        if isinstance(custom_value, (list, tuple)):
+            if key in settings:
+                existing = list(settings[key])
+            else:
+                existing = list(getattr(global_settings, key))
+
+            for item in custom_value:
+                if item not in existing:
+                    existing.append(item)
+            settings[key] = existing
+
+        else:
+            settings[key] = custom_value
+
+    return settings
+
+
 def main(argv):
     try:
         from django.core.management import execute_from_command_line
@@ -201,25 +239,19 @@ def main(argv):
         make_parser().print_help()
         sys.exit(2)
 
-    # If you don't specify a command we require --admin or one --app.
-    if not (options.admin or options.apps):
-        parser.error('--admin or --app=APPNAME is required')
-
     if options.persisting and (options.database == DEFAULT_DATABASE):
         options.database = PERSISTING_DATABASE
 
-    apps = [name for name, prefix in options.apps]
-    if options.admin:
-        apps.extend(name for name in ADMIN_APPS if name not in apps)
-
-    settings['INSTALLED_APPS'] = apps
+    settings['INSTALLED_APPS'] = [name for name, prefix in options.apps]
     settings['DATABASES'] = {'default': parse_database_string(options.database)}
     # Only set after the database has been set.
     settings.setdefault('SECRET_KEY', make_secret_key(options))
 
-    if options.debug:
-        settings.setdefault('DEBUG', True)
-        add_debug_toolbar(settings)
+    if options.debug_toolbar:
+        add_custom_app('django-debug-toolbar', settings)
+
+    if options.admin:
+        add_custom_app('admin', settings)
 
     configure_settings(settings)
 
@@ -284,27 +316,6 @@ def make_admin_urlpatterns():
 
     admin.autodiscover()
     return patterns('', url(r'^admin/', include(admin.site.urls)))
-
-
-def add_debug_toolbar(settings):
-    """Adds necessary bits for django-debug-toolbar to the settings."""
-    from django.conf import global_settings
-
-    requirements = [
-        ('MIDDLEWARE_CLASSES', 'debug_toolbar.middleware.DebugToolbarMiddleware'),
-        ('INTERNAL_IPS', '127.0.0.1'),
-        ('INSTALLED_APPS', 'debug_toolbar'),
-    ]
-
-    for name, value in requirements:
-        list_value = list(settings.get(name, []))
-        # When not set use the Django defaults. Mostly for middleware.
-        if not list_value:
-            list_value = list(getattr(global_settings, name))
-
-        if value not in list_value:
-            list_value.append(value)
-            settings[name] = list_value
 
 
 if __name__ == "__main__":

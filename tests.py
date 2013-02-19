@@ -1,15 +1,11 @@
 #!/usr/bin/env python
 from __future__ import with_statement
-import unittest
 from mock import MagicMock, Mock, patch, call
 from optparse import OptionParser
-from djangomini import (add_app_name, make_parser, parse_args,
-    settings_name, settings_value, _parse_rfc1738_args, parse_database_string,
-    main, configure_urlconf, make_urlpatterns, configure_settings,
-    make_admin_urlpatterns, DJANGO_SETTINGS, ADMIN_APPS, _rooturlconf)
-
-
 import django
+import djangomini
+import unittest
+
 
 django_13 = django.VERSION[:2] < (1, 4)
 url_import_patch = 'django.core.urlresolvers.import_module' if django_13 else 'django.conf.urls.import_module'
@@ -35,26 +31,27 @@ class AddAppNameTests(BaseTest):
         self.parser.values.apps = []
 
     def test_with_prefix(self):
-        add_app_name(None, '--app', 'test:prefix', self.parser)
+        djangomini.add_app_name(None, '--app', 'test:prefix', self.parser)
         self.assertEqual(self.parser.values.apps, [('test', 'prefix')])
 
     def test_without_prefix(self):
-        add_app_name(None, '--app', 'test', self.parser)
+        djangomini.add_app_name(None, '--app', 'test', self.parser)
         self.assertEqual(self.parser.values.apps, [('test', '')])
 
 
 class ParsingArgumentsTests(BaseTest):
     def test_make_parser(self):
-        self.assertTrue(isinstance(make_parser(), OptionParser))
+        self.assertTrue(isinstance(djangomini.make_parser(), OptionParser))
 
     def test_default_args(self):
-        opts, django_opts, args = parse_args(['test'])
+        opts, django_opts, args = djangomini.parse_args(['test'])
 
         expected = {
             'admin': False,
             'persisting': False,
             'apps': [],
             'database': 'sqlite:///:memory:',
+            'debug_toolbar': False,
         }
 
         for option, value in expected.items():
@@ -91,7 +88,7 @@ class ParsingArgumentsTests(BaseTest):
         }
 
         for line, expected in data.items():
-            opts, django_opts, args = parse_args(line.split(' '))
+            opts, django_opts, args = djangomini.parse_args(line.split(' '))
 
             for key, expected_value in expected[0].items():
                 self.assertEqual(getattr(opts, key), expected_value)
@@ -107,9 +104,10 @@ class ParsingArgumentsTests(BaseTest):
         ]
 
         for line in data:
-            self.assertRaises(SystemExit, parse_args, line.split())
+            self.assertRaises(SystemExit, djangomini.parse_args, line.split())
 
     def test_settings_name(self):
+        # How extra argument flags get converted to Python names.
         tests = [
             ('name', 'NAME'),
             ('with-underscore', 'WITH_UNDERSCORE'),
@@ -118,9 +116,10 @@ class ParsingArgumentsTests(BaseTest):
         ]
 
         for value, expected in tests:
-            self.assertEqual(settings_name(value), expected)
+            self.assertEqual(djangomini.settings_name(value), expected)
 
     def test_settings_value(self):
+        # How extra argument values get converted to Python types.
         tests = [
             ('True', True),
             ('"string"', 'string'),
@@ -132,11 +131,12 @@ class ParsingArgumentsTests(BaseTest):
         ]
 
         for value, expected in tests:
-            self.assertEqual(settings_value(value), expected)
+            self.assertEqual(djangomini.settings_value(value), expected)
 
 
 class ParsingDatabaseStringTests(BaseTest):
     def test_parse_rfc1738_args(self):
+        # Parsing database connection strings into their components.
         tests = [
             ('sqlite:///:memory:', {'name': 'sqlite', 'database': ':memory:',
                 'username': None, 'host': '', 'query': None, 'password': None,
@@ -154,9 +154,11 @@ class ParsingDatabaseStringTests(BaseTest):
         ]
 
         for value, expected in tests:
-            self.assertEqual(_parse_rfc1738_args(value), expected)
+            self.assertEqual(djangomini._parse_rfc1738_args(value), expected)
 
     def test_parse_database_string(self):
+        # Parsing database connection command line arguments into their
+        # equivalent Django database specification.
         tests = [
             ('sqlite:///:memory:', {'ENGINE': 'django.db.backends.sqlite3',
                 'NAME': ':memory:', 'HOST': '', 'PASSWORD': '', 'PORT': '',
@@ -182,29 +184,32 @@ class ParsingDatabaseStringTests(BaseTest):
         ]
 
         for value, expected in tests:
-            self.assertEqual(parse_database_string(value), expected)
+            self.assertEqual(djangomini.parse_database_string(value), expected)
 
 
 class ConfigureDjangoTests(BaseTest):
     @patch('django.conf.settings')
     def test_configure_urlconf(self, settings):
+        # Check our built-in URL module is configured.
         patterns = [(r'^test/', 'myapp.views.test')]
-        configure_urlconf(patterns)
+        djangomini.configure_urlconf(patterns)
 
-        self.assertEqual(settings.ROOT_URLCONF, _rooturlconf)
+        self.assertEqual(settings.ROOT_URLCONF, djangomini._rooturlconf)
 
     @patch('django.conf.settings')
     def test_configure_settings(self, settings):
+        # Check Django's configure settings machinery was called.
         settings_dict = {'DEBUG': True, 'TEST': 'test'}
-        configure_settings(settings_dict)
+        djangomini.configure_settings(settings_dict)
         self.assertEqual(settings.configure.call_args, ((), settings_dict))
 
 
 class MakeURLPatternsTests(BaseTest):
     @patch(url_import_patch)
     def test_make_urlpatterns(self, import_module):
+        # make_urlpatterns() result is an iterable of RegexURLResolver objects.
         app_map = [('app1', ''), ('app2', 'prefix')]
-        result = make_urlpatterns(app_map)
+        result = djangomini.make_urlpatterns(app_map)
 
         # Django 1.3 the module gets imported only when a request comes in
         if not django_13:
@@ -220,14 +225,17 @@ class MakeURLPatternsTests(BaseTest):
             self.assertTrue(isinstance(pattern, RegexURLResolver))
 
     def test_make_admin_urlpatterns(self):
+        # make_admin_urlpatters() result is an iterable of RegexURLResolver
+        # objects, although it relies on Django's settings to have been configured.
         try:
             from django.conf.urls import RegexURLResolver
         except ImportError:
             # Django 1.3
             from django.core.urlresolvers import RegexURLResolver
 
-        configure_settings({'INSTALLED_APPS': ADMIN_APPS})
-        result = make_admin_urlpatterns()
+        settings = djangomini.add_custom_app('admin')
+        djangomini.configure_settings(settings)
+        result = djangomini.make_admin_urlpatterns()
 
         for pattern in result:
             self.assertTrue(isinstance(pattern, RegexURLResolver))
@@ -237,9 +245,10 @@ class MainTests(BaseTest):
     @patch(url_import_patch)
     @patch('django.core.management.execute_from_command_line')
     def test_main_admin2(self, execute_from_command_line, import_module):
+        # main() calls Django's execute_from_command_line() to do the work.
         from django.conf import settings
         argv = 'django-mini --admin runserver'.split()
-        main(argv)
+        djangomini.main(argv)
 
         execute_from_command_line.assert_called_once_with(['django-mini', 'runserver'])
 
@@ -247,13 +256,14 @@ class MainTests(BaseTest):
     @patch('django.utils.importlib.import_module')
     @patch('django.core.management.execute_from_command_line')
     def test_main_full(self, call_command, import_module, import_module2):
+        # main() calls Django's execute_from_command_line(), full example.
         from django.conf import settings
         argv = ('django-mini --admin -a app1 --app app2'
                 ' --database sqlite:////var/run/db.sqlite --static-url /cdn/'
                 ' runserver --insecure 80'
                 ).split()
 
-        main(argv)
+        djangomini.main(argv)
 
         call_command.assert_called_once_with(['django-mini', 'runserver', '--insecure', '80'])
         apps = ['django.contrib.admin', 'app1', 'app2']
@@ -262,6 +272,39 @@ class MainTests(BaseTest):
         self.assertEqual(settings.DATABASES['default']['ENGINE'], 'django.db.backends.sqlite3')
         self.assertEqual(settings.DATABASES['default']['NAME'], '/var/run/db.sqlite')
         self.assertEqual(settings.STATIC_URL, '/cdn/')
+
+
+class CustomAppsTests(BaseTest):
+    def test_admin_app(self):
+        # django.contrib.admin
+        result = djangomini.add_custom_app('admin')
+        self.assertTrue('django.contrib.admin' in result['INSTALLED_APPS'])
+
+    def test_debug_toolbar_app(self):
+        # django-debug-toolbar
+        result = djangomini.add_custom_app('django-debug-toolbar')
+        self.assertTrue('debug_toolbar' in result['INSTALLED_APPS'])
+
+    def test_unknown_app(self):
+        # add_custom_app() with an unknown name raises KeyError.
+        self.assertRaises(KeyError, djangomini.add_custom_app, 'UNKNOWN')
+
+    def test_returns_dict(self):
+        # add_custom_app() returns {} if settings is omitted or None.
+        result = djangomini.add_custom_app('admin', settings=None)
+        self.assertTrue(isinstance(result, dict))
+
+    def test_returns_settings(self):
+        # add_custom_app() returns the same object if settings != None.
+        settings = {}
+        result = djangomini.add_custom_app('admin', settings=settings)
+        self.assertTrue(result is settings)
+
+    def test_settings_must_be_mapping(self):
+        # add_custom_app() settings argument must me a mapping type.
+        class SettingsType(object): pass
+        settings = SettingsType()
+        self.assertRaises(TypeError, djangomini.add_custom_app, 'admin', settings=settings)
 
 
 if __name__ == "__main__":

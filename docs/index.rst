@@ -78,6 +78,14 @@ Use ``--admin`` to add Django's admin app and its dependencies to the settings.
 The path is hard-coded to ``/admin/``, and it always comes first in the ``ROOT_URLCONF`` patterns.
 
 
+Adding django-debug-toolbar
+---------------------------
+
+Use ``--debug-toolbar`` to enable Rob Hudson's popular `django-debug-toolbar`_ Django add-on. This adds it to the settings, including the required middleware as well as setting ``DEBUG = True`` and ``INTERNAL_IPS = ('127.0.0.1',)``.
+
+ 
+.. _django-debug-toolbar: https://github.com/django-debug-toolbar/django-debug-toolbar
+
 Configuring a Database
 ----------------------
 

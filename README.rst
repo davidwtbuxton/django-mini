@@ -13,7 +13,7 @@ Install using pip from PyPI::
 
     pip install django-mini
 
-`Download the source`_, unpack it and install it like a typical Python distribution::
+Alternatively, `download the source`_, unpack it and install it like a typical Python distribution::
 
     python setup.py install
 
@@ -28,7 +28,10 @@ Django-mini has a few flags for configuring Django settings, and then any other 
 - ``--database <database>`` - to specify the default database.
 - ``--app <appname>`` - adds your app package to Django's ``INSTALLED_APPS``.
 - ``--admin`` - adds Django's built-in admin and its requirements.
+- ``--debug-toolbar`` - adds Rob Hudson's `django-debug-toolbar`_ and its requirements.
 - ``-p`` or ``--persisting`` - use an sqlite database named ``djangomini.sqlite``.
+
+.. _django-debug-toolbar: https://github.com/django-debug-toolbar/django-debug-toolbar
 
 If you don't use the persisting option or specify a database, django-mini will use an in-memory sqlite database (implying it will get destroyed after the command finishes).
 
