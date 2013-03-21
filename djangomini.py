@@ -20,7 +20,7 @@ except ImportError:
     from cgi import parse_qsl
 
 
-__version__ = '0.4'
+__version__ = '0.4.1'
 BACKENDS = {
     'postgresql': 'django.db.backends.postgresql_psycopg2',
     'mysql': 'django.db.backends.mysql',
@@ -44,12 +44,16 @@ CUSTOM_APPS = {
             'django.contrib.sessions',
             'django.contrib.messages',
             'django.contrib.admin',
+            'django.contrib.staticfiles',
         ],
     },
     'django-debug-toolbar': {
         'MIDDLEWARE_CLASSES': ['debug_toolbar.middleware.DebugToolbarMiddleware'],
         'INTERNAL_IPS': ['127.0.0.1'],
-        'INSTALLED_APPS': ['debug_toolbar'],
+        'INSTALLED_APPS': [
+            'debug_toolbar',
+            'django.contrib.staticfiles',
+        ],
         'DEBUG': True,
     },
 }
