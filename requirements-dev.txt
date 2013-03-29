@@ -5,3 +5,4 @@ coverage
 docutils
 mock
 nose
+tox
