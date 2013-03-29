@@ -20,7 +20,7 @@ except ImportError:
     from cgi import parse_qsl
 
 
-__version__ = '0.4.1'
+__version__ = '0.4.2'
 BACKENDS = {
     'postgresql': 'django.db.backends.postgresql_psycopg2',
     'mysql': 'django.db.backends.mysql',
