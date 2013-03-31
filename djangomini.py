@@ -19,8 +19,13 @@ try:
 except ImportError:
     from cgi import parse_qsl
 
+try:
+    from urllib.parse import unquote_plus
+except ImportError:
+    from urllib import unquote_plus
 
-__version__ = '0.4.2'
+
+__version__ = '0.5'
 BACKENDS = {
     'postgresql': 'django.db.backends.postgresql_psycopg2',
     'mysql': 'django.db.backends.mysql',
@@ -154,17 +159,12 @@ def _parse_rfc1738_args(name):
             tokens = components['database'].split('?', 2)
             components['database'] = tokens[0]
             query = (len(tokens) > 1 and dict(parse_qsl(tokens[1]))) or None
-            # Py2K
-            if query is not None:
-                query = dict((k.encode('ascii'), query[k]) for k in query)
-            # end Py2K
         else:
             query = None
         components['query'] = query
 
         if components['password'] is not None:
-            components['password'] = \
-                urllib.unquote_plus(components['password'])
+            components['password'] = unquote_plus(components['password'])
 
         return components
     else:
@@ -196,7 +196,8 @@ def parse_database_string(value):
 
 def make_secret_key(options):
     """Returns a string for use as the SECRET_KEY setting."""
-    return hashlib.md5(options.database).hexdigest()[:50]
+    db_string = options.database.encode('US-ASCII')
+    return hashlib.md5(db_string).hexdigest()[:50]
 
 
 def add_custom_app(name, settings=None):
@@ -230,7 +231,8 @@ def add_custom_app(name, settings=None):
 def main(argv):
     try:
         from django.core.management import execute_from_command_line
-    except ImportError, err:
+    except ImportError:
+        err = sys.exc_info()[1]
         sys.stderr.write('%s.\nHave you installed Django?\n' % str(err))
         sys.exit(1)
 

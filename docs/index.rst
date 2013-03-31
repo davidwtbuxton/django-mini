@@ -16,7 +16,7 @@ Django-mini is a command-line utility for running `Django`_ management commands 
 
 The code is distributed under the MIT license. The project's home page is https://github.com/davidwtbuxton/django-mini
 
-Django-mini works with Django 1.3, 1.4 and 1.5 on Python 2.5, 2.6 and 2.7.
+Django-mini works with Django 1.3, 1.4 and 1.5 on Python 2.5, 2.6, 2.7 and 3.3.
 
 .. _Django: https://www.djangoproject.com/
 
