@@ -25,7 +25,7 @@ except ImportError:
     from urllib import unquote_plus
 
 
-__version__ = '0.5'
+__version__ = '0.5.1'
 BACKENDS = {
     'postgresql': 'django.db.backends.postgresql_psycopg2',
     'mysql': 'django.db.backends.mysql',
