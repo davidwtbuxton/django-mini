@@ -7,4 +7,6 @@
 .DS_Store
 /MANIFEST
 .tox*
+/docs/_build/
+/djangomini.sqlite
 
