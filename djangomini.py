@@ -111,6 +111,8 @@ def make_parser():
         help='use %s instead of an in-memory database' % PERSISTING_DATABASE)
     parser.add_option('--debug-toolbar', default=False, action='store_true',
         help='sets DEBUG=True and activates django-debug-toolbar if present')
+    parser.add_option('--settings', type='string',
+        help='the Python path to a Django settings module')
 
     return parser
 
@@ -233,7 +235,7 @@ def main(argv):
         from django.core.management import execute_from_command_line
     except ImportError:
         err = sys.exc_info()[1]
-        sys.stderr.write('%s.\nHave you installed Django?\n' % str(err))
+        sys.stderr.write('\n%s. Have you installed Django?\n' % str(err))
         sys.exit(1)
 
     options, django_options, arguments = parse_args(argv[1:])

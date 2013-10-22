@@ -52,6 +52,7 @@ class ParsingArgumentsTests(BaseTest):
             'apps': [],
             'database': 'sqlite:///:memory:',
             'debug_toolbar': False,
+            'settings': None,
         }
 
         for option, value in expected.items():
@@ -83,6 +84,11 @@ class ParsingArgumentsTests(BaseTest):
                 {'admin': False, 'database': 'sqlite:///:memory:',
                     'apps': [],},
                 {'FOO': 'bar',},
+                ['test'],
+            ),
+            '--settings=example.settings test': (
+                {'settings': 'example.settings'},
+                {},
                 ['test'],
             ),
         }
