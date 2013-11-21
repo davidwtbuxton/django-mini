@@ -15,13 +15,9 @@ logging.basicConfig(loglevel=logging.INFO)
 
 
 try:
-    from urlparse import parse_qsl
+    from urllib.parse import parse_qsl, unquote_plus
 except ImportError:
     from cgi import parse_qsl
-
-try:
-    from urllib.parse import unquote_plus
-except ImportError:
     from urllib import unquote_plus
 
 

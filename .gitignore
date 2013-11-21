@@ -2,7 +2,12 @@
 /dist
 /sdist
 /build
+*.egg-info/
+.installed.cfg
+*.egg
+
 /env
+/venv
 .coverage
 .DS_Store
 /MANIFEST
