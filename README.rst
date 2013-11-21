@@ -30,7 +30,7 @@ Django-mini has a few flags for configuring Django settings, and then any other 
 - ``--admin`` - adds Django's built-in admin and its requirements.
 - ``--debug-toolbar`` - adds Rob Hudson's `django-debug-toolbar`_ and its requirements.
 - ``-p`` or ``--persisting`` - use an sqlite database named ``djangomini.sqlite``.
-
+- ``--settings <module>`` - use an existing Django settings module as a base.
 .. _django-debug-toolbar: https://github.com/django-debug-toolbar/django-debug-toolbar
 
 If you don't use the persisting option or specify a database, django-mini will use an in-memory sqlite database (implying it will get destroyed after the command finishes).
@@ -44,8 +44,12 @@ Or use the persisting option::
 
     django-mini.py -p --admin syncdb
     django-mini.py -p --admin runserver
-    
+
 That will start Django's development server with the admin. The admin application will be available at ``http://localhost:8000/admin/`` and all other requests will be directed to your app, i.e. your app's ``myapp.urls`` is configured to serve all other requests.
+
+To collect static files for an existing Django project but override the output directory::
+
+    django-mini.py --settings myproject.settings --static-root /tmp/myproject-static collectstatic
 
 `The full documentation`_ has more examples of use, including how to use other databases, how to change any setting, and how to mount an app at a particular URL.
 

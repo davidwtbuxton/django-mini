@@ -83,7 +83,7 @@ Adding django-debug-toolbar
 
 Use ``--debug-toolbar`` to enable Rob Hudson's popular `django-debug-toolbar`_ Django add-on. This adds it to the settings, including the required middleware as well as setting ``DEBUG = True`` and ``INTERNAL_IPS = ('127.0.0.1',)``.
 
- 
+
 .. _django-debug-toolbar: https://github.com/django-debug-toolbar/django-debug-toolbar
 
 Configuring a Database
@@ -120,6 +120,15 @@ It is equivalent to the following in your Django settings::
     }
 
 Django-mini knows about the built-in database backends so you can use ``postgresql``, ``mysql``, ``sqlite`` or ``oracle`` for the engine name. For a custom back-end you must specify the package name, e.g ``--database myapp.backends.customdb://localhost/mydatabase``.
+
+Using an Existing Django Settings Module
+----------------------------------------
+
+Use ``--settings`` followed by a Python module name to use an existing settings module as a base. You can then override any settings in the base module.
+
+So if you wanted to run the ``python manage.py collectstatic`` but quickly change the output directory, you could do::
+
+    django-mini.py --settings=myproject.settings --static-files=/tmp/django-static collectstatic
 
 
 Configuring Any Django Setting
