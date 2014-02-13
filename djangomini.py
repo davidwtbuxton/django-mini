@@ -226,6 +226,18 @@ def add_custom_app(name, settings=None):
     return settings
 
 
+def settings_from_module(module_name):
+    """Returns a dict of settings from a Django settings module, but only
+    upper-cased names.
+    """
+    # importlib not available in Python<2.7. The empty string for frompath
+    # makes it always import the right-most module in a dotted path.
+    mod = __import__(module_name, {}, {}, [''])
+    names = (name for name in dir(mod) if name.upper() == name)
+
+    return dict((name, getattr(mod, name)) for name in names)
+
+
 def main(argv):
     try:
         from django.core.management import execute_from_command_line
@@ -235,7 +247,13 @@ def main(argv):
         sys.exit(1)
 
     options, django_options, arguments = parse_args(argv[1:])
+
     settings = dict(DJANGO_SETTINGS)
+
+    if options.settings:
+        base_settings = settings_from_module(options.settings)
+        settings.update(base_settings)
+
     settings.update(django_options)
 
     # At least one argument, else we see Django's help instead of our own.

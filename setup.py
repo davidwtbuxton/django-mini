@@ -2,8 +2,9 @@ try:
     from setuptools import setup
 except ImportError:
     from distutils.core import setup
-from djangomini import __version__
 import os
+
+djangomini = __import__('djangomini', {}, {})
 
 
 read = lambda x: open(os.path.join(os.path.dirname(__file__), x)).read()
@@ -11,7 +12,7 @@ read = lambda x: open(os.path.join(os.path.dirname(__file__), x)).read()
 
 setup(
     name = 'django-mini',
-    version = __version__,
+    version = djangomini.__version__,
     author = 'David Buxton',
     author_email = 'david@gasmark6.com',
     url = 'https://github.com/davidwtbuxton/django-mini',

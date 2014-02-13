@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 from __future__ import with_statement
+
+import unittest
+
 from mock import MagicMock, Mock, patch, call
 from optparse import OptionParser
 import django
 import djangomini
-import unittest
 
 
 django_13 = django.VERSION[:2] < (1, 4)
@@ -311,6 +313,16 @@ class CustomAppsTests(BaseTest):
         class SettingsType(object): pass
         settings = SettingsType()
         self.assertRaises(TypeError, djangomini.add_custom_app, 'admin', settings=settings)
+
+
+class SettingsFromModuleTestCase(unittest.TestCase):
+    def test_settings(self):
+        # Try importing settings a module. example.settings has 1 upper-case
+        # setting and 1 lower-case setting. We want just the upper-cased.
+        name = 'example.settings'
+        result = djangomini.settings_from_module(name)
+
+        self.assertEqual(result, {'FOO': 'bar'})
 
 
 if __name__ == "__main__":
