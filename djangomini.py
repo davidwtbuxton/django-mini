@@ -11,7 +11,7 @@ import types
 import urllib
 
 
-logging.basicConfig(loglevel=logging.INFO)
+logging.basicConfig(level=logging.INFO)
 
 
 try:
