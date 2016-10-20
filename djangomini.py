@@ -51,6 +51,11 @@ CUSTOM_APPS = {
             'django.contrib.admin',
             'django.contrib.staticfiles',
         ],
+        'MIDDLEWARE_CLASSES': [
+            'django.contrib.sessions.middleware.SessionMiddleware',
+            'django.contrib.auth.middleware.AuthenticationMiddleware',
+            'django.contrib.messages.middleware.MessageMiddleware',
+        ],
     },
     'django-debug-toolbar': {
         'MIDDLEWARE_CLASSES': ['debug_toolbar.middleware.DebugToolbarMiddleware'],
@@ -230,6 +235,7 @@ def add_custom_app(name, settings=None):
 
 def main(argv):
     try:
+        import django
         from django.core.management import execute_from_command_line
     except ImportError:
         err = sys.exc_info()[1]
@@ -260,6 +266,7 @@ def main(argv):
         add_custom_app('admin', settings)
 
     configure_settings(settings)
+    django.setup()
 
     urlpatterns = make_urlpatterns(options.apps)
     if options.admin:
@@ -291,11 +298,7 @@ def configure_settings(kwargs):
 
 def make_urlpatterns(app_map):
     """Creates a new patterns() list from the list of (app, prefix) strings."""
-    try:
-        from django.conf.urls import patterns, include, url
-    except ImportError:
-        # Django 1.3
-        from django.conf.urls.defaults import patterns, include, url
+    from django.conf.urls import include, url
 
     urls = []
     for app, prefix in app_map:
@@ -306,22 +309,17 @@ def make_urlpatterns(app_map):
         except ImportError:
             logging.warn('Failed to add %r to URL patterns, moving on.', module)
 
-    return patterns('', *urls)
+    return urls
 
 
 def make_admin_urlpatterns():
     """Imports the default site admin instance and returns a patterns() list
     configured to serve it at /admin/.
     """
-    try:
-        from django.conf.urls import patterns, include, url
-    except ImportError:
-        # Django 1.3
-        from django.conf.urls.defaults import patterns, include, url
+    from django.conf.urls import include, url
     from django.contrib import admin
 
-    admin.autodiscover()
-    return patterns('', url(r'^admin/', include(admin.site.urls)))
+    return [url(r'^admin/', include(admin.site.urls))]
 
 
 if __name__ == "__main__":

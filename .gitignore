@@ -9,4 +9,4 @@
 .tox*
 /docs/_build/
 /djangomini.sqlite
-
+*.egg-info/
